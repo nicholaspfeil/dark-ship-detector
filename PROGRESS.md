@@ -13,7 +13,7 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - [x] 4:15 Live mode works (or skipped: replay only)
 - [x] 5:15 Per-ship tracking + silence detection
 - [x] 6:15 Risk score with reasons
-- [ ] 6:45 Phone alert rings with a real alert
+- [x] 6:45 Phone alert rings with a real alert
 - [ ] 7:15 One-command demo
 - [ ] 7:30 README; FEATURE FREEZE
 - [ ] 8:00 Backup video recorded
@@ -29,7 +29,7 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - Risk scoring works: `scoring.py` `score_event(event)` -> risk 0-100 + reasons list (points, text); `alert_text(event, result)` builds the spoken sentence. `detect.py` prints each scored silence and a top-N ranking (one line per ship) with "why". Top alerts per recording are moving ships offshore (Oceanus 90, unidentified 367375550 80, Maersk Glacier 70); gov vessels and stopped bay boats score 1.
 - Alerts: `alert.py` `send_alert(text)` phones MY_PHONE_NUMBER via Twilio (inline TwiML, Polly.Joanna voice, says alert twice), watches call status up to 45 s, and falls back to the laptop voice (Windows System.Speech) if Twilio isn't configured, errors, or the call is failed/busy/no-answer. `detect.py --alert` sends one alert (default `--max-alerts 1`) for the first silence with risk >= 70 (`--alert-threshold`); `--speaker` skips the phone. Calls run in a background thread so detection keeps going. `python alert.py` = test call; `python alert.py --speaker` = laptop only.
 - `secrets_env.get_secret(name)` reads env vars or saved Windows user vars (live.py uses it too).
-- Tested: TwiML escaping, laptop fallback (spoke the Oceanus alert aloud), speech with apostrophes. Real Twilio test call (`python alert.py`, test text) placed 2026-10-24, answered, and Nicholas confirmed the spoken text was correct. Not yet done: a call carrying a real detector alert (`detect.py --alert`).
+- Tested: TwiML escaping, laptop fallback (spoke the Oceanus alert aloud), speech with apostrophes. Real Twilio test call (`python alert.py`, test text) placed 2026-10-24, answered, and Nicholas confirmed the spoken text was correct. Real detector alert call (`detect.py --speed 0 --alert`, Oceanus risk 90) placed 2026-10-24 and answered.
 
 ## Decisions made
 - Replay default speed 600x: a ~25 h recording plays in ~2.5 min.
@@ -49,5 +49,6 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - Live detection only smoke-tested (connects, no crash); a live silence takes 15+ min to appear.
 - No fishing vessel in the recordings ever scores high (only 2 fishing boats, mostly docked). The demo story leads with illegal fishing, so the demo needs a decision: lead with a real top alert (e.g. Oceanus 90) or add a clearly labeled simulated fishing-boat scenario. Decide in milestone 6.
 - Weights are hand-set from the exploration facts, not fitted (no labeled "real dark ship" data exists). Be upfront about that with judges.
-- Twilio secrets are saved as Windows user env vars. Milestone 5 box stays unchecked until a call with a real detector alert rings (`python detect.py --speed 0 --alert`).
+- Twilio secrets are saved as Windows user env vars.
+- `--alert` fires on the FIRST silence with risk >= threshold as it happens (needed for live mode, which never "ends"), not the overall top of the run. In the biggest recording these are the same ship (Oceanus 90).
 - Next: milestone 6, one-command demo + README (and decide the demo scenario).
