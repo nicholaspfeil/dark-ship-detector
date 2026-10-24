@@ -32,10 +32,12 @@ STATUS_WAIT_S = 45  # how long to watch the call before giving up on it
 
 
 def twiml_for(text):
-    """Build the call's script: say the alert, pause, then repeat it once."""
-    t = escape(text)  # turn &, <, > into XML-safe codes so the TwiML stays valid
-    return (f'<Response><Say voice="{VOICE}">{t}</Say><Pause length="1"/>'
-            f'<Say voice="{VOICE}">Repeating. {t}</Say></Response>')
+    """Build the call's script: say the alert (and reasons), pause, then repeat
+    just the alert once, so the call stays short."""
+    alert, _, reasons = text.partition(" Main reasons: ")
+    say = lambda s: f'<Say voice="{VOICE}">{escape(s)}</Say>'  # escape: &, <, > -> XML-safe
+    body = say(alert) + (say("Main reasons: " + reasons) if reasons else "")
+    return f'<Response>{body}<Pause length="1"/>{say("Repeating. " + alert)}</Response>'
 
 
 def speak_local(text):

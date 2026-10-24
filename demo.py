@@ -24,7 +24,7 @@ import pandas as pd
 from alert import send_alert_async
 from feed import get_feed
 from replay import MAX_WAIT_S, load_session
-from scoring import alert_text, clean_name, knowledge, score_event
+from scoring import alert_text, call_text, clean_name, knowledge, score_event
 from tracker import ShipTracker
 
 DEMO_SESSION = "20261019_195808"       # biggest recording: Oct 19-20, 2026
@@ -124,7 +124,7 @@ def main():
                         alert_thread = True
                     else:
                         print(" Calling the dispatcher...\n")
-                        alert_thread = send_alert_async(text, use_phone=not args.speaker)
+                        alert_thread = send_alert_async(call_text(e, result), use_phone=not args.speaker)
                     if args.mode == "replay":
                         state["fast"] = True  # skip ahead through the rest of the day
     except KeyboardInterrupt:

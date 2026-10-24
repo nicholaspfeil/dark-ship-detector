@@ -93,6 +93,42 @@ def in_polygon(lat, lon, poly):
     return inside
 
 
+def move(lat, lon, course_deg, dist_nm):
+    """Where you end up going dist_nm along course_deg. Flat-earth math is fine
+    over a few miles: 1 minute of latitude = 1 nautical mile."""
+    c = math.radians(course_deg)
+    dlat = dist_nm * math.cos(c) / 60
+    dlon = dist_nm * math.sin(c) / (60 * math.cos(math.radians(lat)))
+    return lat + dlat, lon + dlon
+
+
+def project_course(lat, lon, sog, cog, minutes):
+    """
+    Dead reckoning: assume the ship kept the same speed and course after it went
+    silent. Walk along that path in 20-second steps for `minutes` and report
+    the closest it gets to the reserve, and when.
+    Returns {"now": (lat, lon), "enters_reserve": bool,
+             "closest_nm": float, "minutes_to_closest": float} or None.
+    """
+    if sog is None or cog is None or sog < 1 or minutes <= 0:
+        return None
+    best = (distance_nm((lat, lon), RESERVE_CENTER), 0.0)
+    enters = False
+    steps = int(minutes * 3)  # 3 steps per minute = every 20 s
+    for i in range(1, steps + 1):
+        m = i / 3
+        p = move(lat, lon, cog, sog * m / 60)
+        if in_polygon(*p, RESERVE):
+            enters = True
+            best = (0.0, m)
+            break
+        d = distance_nm(p, RESERVE_CENTER)
+        if d < best[0]:
+            best = (d, m)
+    return {"now": move(lat, lon, cog, sog * minutes / 60), "enters_reserve": enters,
+            "closest_nm": best[0], "minutes_to_closest": best[1]}
+
+
 def harbor_at(lat, lon):
     for name, (s, n, w, e) in HARBORS.items():
         if s <= lat <= n and w <= lon <= e:
@@ -224,6 +260,16 @@ def score_event(e, kb=None):
     elif reserve_nm < 3:
         add(10, f"{reserve_nm:.0f} miles from {RESERVE_NAME}")
 
+    # 4b. Projected course: if it kept going the same way during the silence,
+    # would it be in (or right next to) the reserve by now?
+    projection = None if harbor else project_course(lat, lon, sog, cog, e["quiet_min"])
+    if projection and projection["minutes_to_closest"] > 0:
+        if projection["enters_reserve"]:
+            add(15, f"on its last course it would have entered {RESERVE_NAME} "
+                    f"{projection['minutes_to_closest']:.0f} minutes after going silent")
+        elif projection["closest_nm"] < 0.5:
+            add(5, f"on its last course it would have passed within half a mile of {RESERVE_NAME}")
+
     # 5. Ship type
     gov = is_government(e["mmsi"], name, ship_type)
     if gov:
@@ -252,6 +298,7 @@ def score_event(e, kb=None):
             "type_word": "government vessel" if gov else SHIP_TYPE_WORDS.get(ship_type, _type_family(ship_type)),
             "harbor": harbor, "inside_coverage_nm": inside_nm,
             "reserve_nm": reserve_nm, "toward_reserve": toward_reserve,
+            "projection": projection,
             "from_point_loma_nm": distance_nm(POINT_LOMA, (lat, lon)),
             "bearing_from_point_loma": bearing_deg(POINT_LOMA, (lat, lon)),
         },
@@ -310,4 +357,19 @@ def alert_text(e, result):
     elif sog is not None:
         parts.append("stopped")
 
-    return ", ".join(parts) + f". Risk score {result['risk']} out of 100."
+    text = ", ".join(parts) + "."
+    p = f["projection"]
+    if p and p["minutes_to_closest"] > 0 and (p["enters_reserve"] or p["closest_nm"] < 0.5):
+        verb = "entered" if p["enters_reserve"] else "passed within half a mile of"
+        text += (f" If it held course, it {verb} the reserve about "
+                 f"{p['minutes_to_closest']:.0f} minutes after going silent.")
+    return text + f" Risk score {result['risk']} out of 100."
+
+
+def call_text(e, result):
+    """What the phone says: the alert, then the main reasons it ranked high."""
+    reasons = [t for p, t in result["reasons"] if p > 0][:3]
+    text = alert_text(e, result)
+    if reasons:
+        text += " Main reasons: " + "; ".join(reasons) + "."
+    return text

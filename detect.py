@@ -14,7 +14,7 @@ import argparse
 
 from alert import send_alert_async
 from feed import add_feed_args, get_feed
-from scoring import alert_text, knowledge, score_event
+from scoring import alert_text, call_text, knowledge, score_event
 from tracker import ShipTracker
 
 
@@ -59,7 +59,7 @@ def main():
                     print(format_event(e, result))
                 if (args.alert and result["risk"] >= args.alert_threshold
                         and len(alerts_sent) < args.max_alerts):
-                    text = alert_text(e, result)
+                    text = call_text(e, result)
                     print(f"\n>>> ALERT: {text}\n")
                     alerts_sent.append(send_alert_async(text, use_phone=not args.speaker))
     except KeyboardInterrupt:
