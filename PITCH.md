@@ -17,7 +17,7 @@ Lead with the phone; the chart is supporting. Record the screen plus the phone o
 
 ## Before you start
 - Phone on the table, volume up, ringer ON.
-- Terminal open in the repo, font large. Command typed but not run: `.venv\Scripts\python demo.py --dashboard`
+- Terminal open in the repo, font large. Command typed but not run: `.venv\Scripts\python demo.py --dashboard --two-way` (press 1 on the call to send a patrol)
   (it opens the live chart in your browser by itself; put that window on the projector and press F11 for full screen).
 - Click "Turn on sound" on the chart once it opens, so the room hears each silence as a tone.
 - `map.html` open in another tab for the Q&A (run `python make_map.py` first).
