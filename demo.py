@@ -17,11 +17,13 @@ finds is what gets called in.
 """
 
 import argparse
+import threading
 import time
 
 import pandas as pd
 
-from alert import send_alert_async
+from alert import send_alert
+from dashboard import Dashboard
 from feed import get_feed
 from replay import MAX_WAIT_S, load_session
 from scoring import alert_text, call_text, clean_name, knowledge, score_event
@@ -64,6 +66,9 @@ def main():
     parser.add_argument("--speaker", action="store_true", help="laptop voice instead of a phone call")
     parser.add_argument("--no-alert", action="store_true", help="don't call or speak (rehearsal)")
     parser.add_argument("--speed", type=float, default=DEMO_SPEED, help="replay speed during the watch phase")
+    parser.add_argument("--dashboard", action="store_true", help="also show the live chart in a browser")
+    parser.add_argument("--port", type=int, default=8765, help="dashboard port")
+    parser.add_argument("--no-open", action="store_true", help="don't open a browser tab for the dashboard")
     args = parser.parse_args()
 
     print("=" * 72)
@@ -72,6 +77,13 @@ def main():
     print(" and phones a dispatcher about the most suspicious one.")
     print("=" * 72)
     knowledge()  # learn coverage edge + ship registry from data/
+
+    dash = None
+    if args.dashboard:
+        dash = Dashboard(port=args.port, speed=None if args.mode == "live" else round(args.speed))
+        dash.start(open_browser=not args.no_open)
+        print("Opening the dashboard...")
+        time.sleep(4)  # give the browser a moment to load before ships start moving
 
     state = {"fast": False, "watching": args.mode == "live"}
     if args.mode == "live":
@@ -91,8 +103,12 @@ def main():
     try:
         for msg in stream:
             events = tracker.update(msg)
+            if dash:
+                dash.on_message(msg)
 
             if state["watching"] and not state["fast"]:
+                if dash:
+                    dash.phase = "watching"
                 if not announced_watch and args.mode == "replay":
                     announced_watch = True
                     print(f"Learned {len(tracker.ships)} ships. Now playing at {args.speed:g}x "
@@ -105,9 +121,13 @@ def main():
 
             for e in events:
                 if e["event"] != "silent":
+                    if dash:
+                        dash.on_event(e)
                     continue
                 result = score_event(e)
                 scored.append((result["risk"], e, result))
+                if dash:
+                    dash.on_event(e, result)
                 if not state["watching"] or state["fast"]:
                     continue  # silences during fast-forward are ranked at the end, not shown live
                 name = clean_name(result["facts"]["name"]) or f"ID {e['mmsi']}"
@@ -120,13 +140,21 @@ def main():
                     print(f" HIGH RISK: {text}")
                     print(" Why: " + "; ".join(f"{p:+d} {t}" for p, t in result["reasons"] if p))
                     print("!" * 72 + "\n")
+                    spoken = call_text(e, result)
+                    if dash:
+                        dash.set_alert(e, result, spoken, "rehearsal" if args.no_alert else "calling")
+                        dash.publish(tracker, force=True)
+                        dash.frozen = True  # keep the chart on this moment
                     if args.no_alert:
                         alert_thread = True
                     else:
                         print(" Calling the dispatcher...\n")
-                        alert_thread = send_alert_async(call_text(e, result), use_phone=not args.speaker)
+                        alert_thread = threading.Thread(target=deliver, args=(spoken, not args.speaker, dash))
+                        alert_thread.start()
                     if args.mode == "replay":
                         state["fast"] = True  # skip ahead through the rest of the day
+            if dash:
+                dash.publish(tracker)
     except KeyboardInterrupt:
         pass
 
@@ -136,6 +164,7 @@ def main():
     print(f"\nProcessed the full recording: {len(tracker.ships)} ships, {len(scored)} silences. "
           f"Most were harmless. Top 5:")
     shown = set()
+    top_rows = []
     for risk, e, result in sorted(scored, key=lambda s: -s[0]):
         if e["mmsi"] in shown:
             continue
@@ -143,6 +172,8 @@ def main():
         name = clean_name(result["facts"]["name"]) or f"ID {e['mmsi']}"
         why = "; ".join(t for p, t in result["reasons"] if p > 0) or "-"
         print(f"  {risk:>2}  {name:<20.20} {local(e['time'], with_date=True):<16} {why}")
+        top_rows.append({"time": local(e["time"], with_date=True), "name": name, "risk": risk,
+                         "reason": next((t for p, t in result["reasons"] if p > 0), "")})
         if len(shown) >= 5:
             break
     lowest = sorted(scored, key=lambda s: s[0])[:1]
@@ -151,6 +182,23 @@ def main():
         print(f"\nExample of a silence we did NOT alert on: "
               f"{clean_name(r['facts']['name']) or lowest[0][1]['mmsi']}, risk {r['risk']} "
               f"({'; '.join(t for p, t in r['reasons'] if p < 0)})")
+
+    if dash:
+        dash.set_top(top_rows)
+        dash.publish(force=True)
+        print("\nThe dashboard stays open. Press Ctrl+C to quit.")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+
+
+def deliver(text, use_phone, dash):
+    """Send the alert (phone, else laptop voice) and show how it was delivered."""
+    how = send_alert(text, use_phone=use_phone)
+    if dash:
+        dash.set_alert_status(how)
 
 
 if __name__ == "__main__":

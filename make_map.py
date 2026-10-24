@@ -20,8 +20,7 @@ import pandas as pd
 
 from demo import DEMO_SESSION
 from replay import load_session
-from scoring import (HARBORS, POINT_LOMA, RESERVE, SECTOR_DEG, clean_name, knowledge,
-                     move, score_event)
+from scoring import HARBORS, POINT_LOMA, RESERVE, clean_name, knowledge, score_event
 from tracker import ShipTracker
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "map.html")
@@ -70,14 +69,7 @@ def build(tag):
             "projection": [[e["lat"], e["lon"]], list(proj["now"])] if proj else None,
         })
 
-    # Learned coverage edge: one point per compass slice, at its edge distance.
-    edge = []
-    for sector in sorted(kb.coverage_nm):
-        mid = sector + SECTOR_DEG / 2
-        edge.append(list(move(*POINT_LOMA, mid, kb.coverage_nm[sector])))
-    edge.append(edge[0])
-
-    return {"points": points, "tracks": tracks, "edge": edge,
+    return {"points": points, "tracks": tracks, "edge": kb.coverage_outline(),
             "reserve": [list(p) for p in RESERVE],
             "harbors": [[[s, w], [n, e]] for s, n, w, e in HARBORS.values()],
             "center": list(POINT_LOMA), "n_silences": len(silences), "tag": tag}

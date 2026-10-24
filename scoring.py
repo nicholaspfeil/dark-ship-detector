@@ -175,6 +175,13 @@ class Knowledge:
                 "length_m": g["length_m"].max(),
             }
 
+    def coverage_outline(self):
+        """The learned coverage edge as a closed ring of [lat, lon] points (for maps):
+        one point per compass slice, at that slice's edge distance."""
+        ring = [list(move(*POINT_LOMA, sector + SECTOR_DEG / 2, dist))
+                for sector, dist in sorted(self.coverage_nm.items())]
+        return ring + ring[:1]
+
     def coverage_edge(self, lat, lon):
         sector = int(bearing_deg(POINT_LOMA, (lat, lon)) // SECTOR_DEG) * SECTOR_DEG
         return self.coverage_nm.get(sector)

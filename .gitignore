@@ -12,3 +12,7 @@ __pycache__/
 
 # Generated map
 map.html
+
+# Dashboard live state (rewritten every run)
+web/state.json
+web/state.json.tmp
