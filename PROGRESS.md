@@ -11,7 +11,7 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - [x] 3:15 Repo set up, first commit pushed
 - [x] 3:45 Replay mode streams recorded CSV
 - [x] 4:15 Live mode works (or skipped: replay only)
-- [ ] 5:15 Per-ship tracking + silence detection
+- [x] 5:15 Per-ship tracking + silence detection
 - [ ] 6:15 Risk score with reasons
 - [ ] 6:45 Phone alert rings with a real alert
 - [ ] 7:15 One-command demo
@@ -24,14 +24,21 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - `messages.py` defines the shared message dict ("position" / "static") and cleans sentinels (heading 511, course 360, speed 102.3 or >50 kn -> None). Live mode must produce the same dicts.
 - `replay(tag, speed)` is a generator; the detector will consume it with `for msg in replay(...)`.
 - Live mode works: `live.py` connects to aisstream, converts messages with the same messages.py functions, reconnects with backoff (1 s doubling to 60 s), and reconnects if silent 120 s. Async WebSocket runs in a background thread feeding a queue, so `live()` is a plain generator like `replay()`. Tested: real San Diego traffic arrives within seconds; bad key prints a hint and retries.
-- `feed.py`: `get_feed(mode)` + `add_feed_args(parser)` give any script `--mode replay|live --session --speed`. Milestone 3 should read from `get_feed`.
+- `feed.py`: `get_feed(mode)` + `add_feed_args(parser)` give any script `--mode replay|live --session --speed`. Milestone 3 reads from `get_feed`.
+- Silence detection works: `tracker.py` (`ShipTracker.update(msg)` -> events "silent"/"returned", each with a snapshot: last position, speed, course, type, quiet minutes, silence_count). `python detect.py --speed 0` runs a whole recording in 1-5 s. Results: 137 / 48 / 38 / 59 silences across the 4 recordings.
 
 ## Decisions made
 - Replay default speed 600x: a ~25 h recording plays in ~2.5 min.
 - Replay never waits more than 2 real seconds between rows (skips dead air during feed outages). Detection must use message timestamps, never the wall clock, so this changes no results.
+- Silence threshold = max(15 min, 4x the ship's own median gap); needs 3+ reports first. 15 min because 90% of normal gaps are under that.
+- Clock = feed timestamps. Feed outage = no ship reports for 5+ min; outage time is subtracted from every ship's silence. Recordings have 14-20 h recorder gaps, so this is essential.
+- Each silence reported once; "returned" clears it. silence_count lets scoring discount ships that go quiet often.
 - Sessions are replayed one at a time (recordings are days apart; merging them would create fake day-long silences).
 
 ## Known issues / next step
 - Repo: https://github.com/nicholaspfeil/dark-ship-detector (origin/main). Push after every commit.
 - Live messages have no recorder yet (can't save live data for later replay). Add only if time allows.
-- Next: milestone 3, per-ship state + silence detection, reading from `feed.get_feed`. Silence must be measured with message timestamps (replay compresses/caps waits).
+- Many silent ships have ship_type=None: static messages are rare. Milestone 4 should prefill types from all ships_*.csv files (mmsi -> type), and treat type 0/None + name "US GOV" as government.
+- Most silences are stopped boats inside the bay: scoring must push these down.
+- Live detection only smoke-tested (connects, no crash); a live silence takes 15+ min to appear.
+- Next: milestone 4, risk score with reasons, applied to "silent" events.
