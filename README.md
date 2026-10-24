@@ -42,6 +42,18 @@ The phone call is the interface; the chart is for the room. A tiny built-in web 
 - When the alert fires, the chart flies to the ship and a card shows the risk gauge, the reasons and the exact words the dispatcher hears, plus whether the call was answered.
 - **Sound:** click "Turn on sound" to hear each new silence as a tone, a soft low tick for harmless ones and a brighter chime for risky ones. You can follow the sea without watching it.
 
+## Does it catch dark ships? (`python evaluate.py`)
+
+There's no list of confirmed real dark ships, so we made labeled test cases: simulated boats (fake IDs 999xxxxxx) mixed into all 4 real recordings. Each reports normally, then goes dark near the reserve, either heading straight for it at 6-12 knots or working slowly with constant turns (fishing-style) under a pleasure-boat label.
+
+| Scenario | Caught (risk 70+) |
+|---|---|
+| Transit toward the reserve | 36 / 40 (90%) |
+| Fishing-style near the reserve | 38 / 40 (95%) |
+| Overall | 74 / 80 (92%) |
+
+Caveat: these scenarios match what the rules were designed to catch, so this checks that the system works end to end on realistic traffic; it isn't proof against every evasion. False alarms come from real traffic (~17 calls per 24 h at risk 70, from `backtest.py`).
+
 ## Reconstructing the dark gap
 
 When a silent ship starts transmitting again, it went dark at A and came back at B, so it must have traveled between them, and the straight line A to B is the shortest route it could have taken. The system checks whether that route crosses the reserve, whether the ship stayed near the reserve while dark, and whether the trip would need an impossible speed (a sign of spoofed positions; the check uses real elapsed time, because ships keep moving during feed outages). In the demo recording, **Oceanus reappeared 2.9 miles away and its shortest path while dark ran through the Cabrillo reserve**, so the projected course was right.

@@ -49,6 +49,8 @@ Lead with the phone; the chart is supporting. Record the screen plus the phone o
 | Silences | 282 total (about 488 per 24 h) |
 | Calls at risk 70 / 80 / 90 | about 17 / 5 / 2 per 24 h |
 | Silences in a harbor / government | 77% / 27% |
+| Simulated dark ships caught (`evaluate.py`) | 74 / 80 (92%); these scenarios match what the rules target |
+| Oceanus after reappearing | shortest path while dark ran through the reserve |
 | Coverage edge offshore (learned) | 22-44 nm from Point Loma, depending on direction |
 | Normal gap between reports | median ~2.7 min, 90% under 15 min |
 
