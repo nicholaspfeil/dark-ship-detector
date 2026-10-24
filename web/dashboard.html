@@ -119,6 +119,8 @@
   .gauge .num { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
   .gauge b { font-size: 34px; font-weight: 700; font-stretch: 80%; line-height: 1; }
   .gauge small { color: var(--muted); font-size: 11px; }
+  #a-update { margin: 12px 0 0; padding: 8px 12px; border-left: 3px solid var(--magenta);
+    background: rgba(211,53,156,.12); font-size: 14px; }
   #a-reasons { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
   #a-reasons li { display: grid; grid-template-columns: 34px 1fr; }
   #a-reasons .p { font-weight: 700; font-variant-numeric: tabular-nums; color: #FFB4AE; }
@@ -172,6 +174,7 @@
         <div class="num"><b id="a-risk">0</b><small>risk score</small></div>
       </div>
     </div>
+    <p id="a-update" hidden></p>
     <ul id="a-reasons"></ul>
     <p class="hears">What the dispatcher hears: <q id="a-text"></q></p>
   </section>
@@ -372,6 +375,7 @@ function showAlert(a) {
   const box = $("alert");
   box.dataset.status = a.status;
   $("a-status").textContent = STATUS[a.status] || a.status;
+  if (a.update && $("a-update").hidden) { $("a-update").textContent = a.update; $("a-update").hidden = false; }
   if (alertShown) return;
   alertShown = true;
   $("a-name").textContent = a.name;

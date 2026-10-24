@@ -28,7 +28,7 @@ from replay import list_sessions
 from dashboard import Dashboard
 from feed import get_feed
 from replay import MAX_WAIT_S, load_session
-from scoring import alert_text, call_text, clean_name, knowledge, score_event
+from scoring import alert_text, call_text, clean_name, gap_text, knowledge, review_gap, score_event
 from tracker import ShipTracker
 
 DEMO_SESSION = "20261019_195808"       # biggest recording: Oct 19-20, 2026
@@ -100,6 +100,7 @@ def main():
     tracker = ShipTracker()
     scored = []
     alert_thread = None
+    alerted_mmsi = None
     next_tick = None
     announced_watch = False
     try:
@@ -125,6 +126,14 @@ def main():
                 if e["event"] != "silent":
                     if dash:
                         dash.on_event(e)
+                    # The alerted ship came back: reconstruct where it went while dark.
+                    if alerted_mmsi == e["mmsi"] and (findings := review_gap(e)):
+                        update = gap_text(e, findings)
+                        print(f"\n >>> {update}\n")
+                        if dash and dash.alert:
+                            dash.alert["update"] = update
+                            dash.publish(force=True)
+                        alerted_mmsi = None
                     continue
                 result = score_event(e)
                 scored.append((result["risk"], e, result))
@@ -143,6 +152,7 @@ def main():
                     print(" Why: " + "; ".join(f"{p:+d} {t}" for p, t in result["reasons"] if p))
                     print("!" * 72 + "\n")
                     spoken = call_text(e, result)
+                    alerted_mmsi = e["mmsi"]
                     if dash:
                         dash.set_alert(e, result, spoken, "rehearsal" if args.no_alert else "calling")
                         dash.publish(tracker, force=True)

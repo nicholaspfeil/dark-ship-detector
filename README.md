@@ -42,6 +42,10 @@ The phone call is the interface; the chart is for the room. A tiny built-in web 
 - When the alert fires, the chart flies to the ship and a card shows the risk gauge, the reasons and the exact words the dispatcher hears, plus whether the call was answered.
 - **Sound:** click "Turn on sound" to hear each new silence as a tone, a soft low tick for harmless ones and a brighter chime for risky ones. You can follow the sea without watching it.
 
+## Reconstructing the dark gap
+
+When a silent ship starts transmitting again, it went dark at A and came back at B, so it must have traveled between them, and the straight line A to B is the shortest route it could have taken. The system checks whether that route crosses the reserve, whether the ship stayed near the reserve while dark, and whether the trip would need an impossible speed (a sign of spoofed positions; the check uses real elapsed time, because ships keep moving during feed outages). In the demo recording, **Oceanus reappeared 2.9 miles away and its shortest path while dark ran through the Cabrillo reserve**, so the projected course was right.
+
 ## Shift briefing (`python briefing.py`)
 
 One phone call that sums up a whole recording, like a start-of-shift handoff: how many silences, how many were routine, and the top ships worth checking with their two strongest reasons. `--print` shows the text, and `--speaker` says it on the laptop.

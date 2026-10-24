@@ -65,7 +65,9 @@ class ShipTracker:
                 ship["gaps_min"] = (ship["gaps_min"] + [gap_min])[-GAP_HISTORY:]
             if ship["silent"]:
                 ship["silent"] = False
-                events.append(self._event("returned", ship))
+                ev = self._event("returned", ship)  # lat/lon = where it went dark
+                ev["back_lat"], ev["back_lon"] = msg["lat"], msg["lon"]  # where it came back
+                events.append(ev)
             ship.update(last_seen=t, lat=msg["lat"], lon=msg["lon"],
                         sog=msg["sog"], cog=msg["cog"])
             ship["reports"] += 1

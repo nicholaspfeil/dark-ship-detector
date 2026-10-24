@@ -14,7 +14,7 @@ import argparse
 
 from alert import send_alert_async
 from feed import add_feed_args, get_feed
-from scoring import alert_text, call_text, knowledge, score_event
+from scoring import alert_text, call_text, gap_text, knowledge, review_gap, score_event
 from tracker import ShipTracker
 
 
@@ -50,7 +50,10 @@ def main():
             n_msgs += 1
             for e in tracker.update(msg):
                 if e["event"] == "returned":
-                    if args.show_returns:
+                    findings = review_gap(e)
+                    if findings:
+                        print(f"{e['time']:%Y-%m-%d %H:%M}  GAP      {gap_text(e, findings)}")
+                    elif args.show_returns:
                         print(format_event(e))
                     continue
                 result = score_event(e)

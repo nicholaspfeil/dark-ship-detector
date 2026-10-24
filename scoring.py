@@ -312,6 +312,44 @@ def score_event(e, kb=None):
     }
 
 
+def review_gap(e):
+    """
+    When a silent ship reappears, reconstruct the dark gap: it went dark at A and
+    came back at B, so it must have traveled from A to B in the meantime. The
+    straightest possible route is the line A->B (the real path can only be longer).
+    Returns a list of plain-English findings (empty = nothing notable).
+    """
+    a, b = (e["lat"], e["lon"]), (e["back_lat"], e["back_lon"])
+    dist = distance_nm(a, b)
+    findings = []
+    # Walk the straight line A->B in 40 steps and check it against the reserve.
+    closest = min(distance_nm((a[0] + (b[0] - a[0]) * i / 40, a[1] + (b[1] - a[1]) * i / 40),
+                              RESERVE_CENTER) for i in range(41))
+    crossed = any(in_polygon(a[0] + (b[0] - a[0]) * i / 40, a[1] + (b[1] - a[1]) * i / 40, RESERVE)
+                  for i in range(41))
+    if crossed:
+        findings.append(f"its shortest path while dark ran through {RESERVE_NAME}")
+    elif closest < 0.5 and dist > 0.3:
+        findings.append(f"its shortest path while dark passed within half a mile of {RESERVE_NAME}")
+    # Speed check uses real elapsed time: ships keep moving during feed outages.
+    real_hours = (e["time"] - e["last_seen"]).total_seconds() / 3600
+    if real_hours > 0 and dist / real_hours > 40:
+        findings.append(f"it would have needed {dist / real_hours:.0f} knots to get there, "
+                        "faster than almost any boat here; the position data may be spoofed")
+    near_a, near_b = distance_nm(a, RESERVE_CENTER), distance_nm(b, RESERVE_CENTER)
+    if e["quiet_min"] >= 30 and near_a < 2 and near_b < 2:
+        findings.append(f"it stayed near {RESERVE_NAME} for {e['quiet_min']:.0f} minutes while dark")
+    return findings
+
+
+def gap_text(e, findings):
+    """Spoken follow-up when a flagged ship reappears."""
+    name = clean_name(e["name"]) or f"ID {e['mmsi']}"
+    dist = distance_nm((e["lat"], e["lon"]), (e["back_lat"], e["back_lon"]))
+    return (f"Update. {name} is transmitting again after {e['quiet_min']:.0f} minutes dark, "
+            f"{dist:.1f} miles from where it went silent. " + " ".join(f[0].upper() + f[1:] + "." for f in findings))
+
+
 def _type_family(t):
     if t is None:
         return "vessel"
