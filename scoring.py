@@ -47,7 +47,8 @@ HARBORS = {
     "Mission Bay": (32.755, 32.80, -117.26, -117.19),
 }
 
-SHIP_TYPE_WORDS = {30: "fishing vessel", 31: "tug", 32: "tug", 35: "military vessel",
+SHIP_TYPE_WORDS = {30: "fishing vessel", 31: "tug", 32: "tug", 33: "underwater operations vessel",
+                   34: "dive boat", 35: "military vessel",
                    36: "sailboat", 37: "pleasure boat", 50: "pilot boat", 51: "rescue vessel",
                    52: "tug", 53: "port tender", 55: "law enforcement vessel", 58: "medical vessel"}
 GOV_NAME = re.compile(r"US ?GOV|USNS|USCG|NOAA|WARSHIP|NAVY|CUTTER|^CG ?\d|^\d*PB\b|^PB\b")
@@ -272,7 +273,8 @@ def _type_family(t):
 def clean_name(name):
     """'LEGACY        ?' -> 'Legacy'. AIS names are typed by crews and often have junk."""
     name = re.sub(r"[^A-Za-z0-9 '\-]", " ", name or "")
-    return " ".join(name.split()).title()
+    return " ".join(w if re.search(r"\d|^(US|USNS|USCG|NOAAS?|CG|PB|RV)$", w) else w.title()
+                    for w in name.upper().split())
 
 
 def alert_text(e, result):
