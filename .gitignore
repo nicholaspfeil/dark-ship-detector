@@ -1,0 +1,11 @@
+# Virtual environment (big, machine-specific, rebuildable)
+.venv/
+
+# Secrets
+.env
+
+# Recorded ship data
+*.csv
+
+# Python cache files
+__pycache__/
