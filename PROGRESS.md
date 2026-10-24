@@ -60,6 +60,6 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - Weights are hand-set from the exploration facts, not fitted (no labeled "real dark ship" data exists). Be upfront about that with judges.
 - Twilio secrets are saved as Windows user env vars.
 - `--alert` fires on the FIRST silence with risk >= threshold as it happens (needed for live mode, which never "ends"), not the overall top of the run. In the biggest recording these are the same ship (Oceanus 90).
-- `demo.py --dashboard` rehearsed with --no-alert only (not yet with the real call; the call code path is unchanged).
+- `demo.py --dashboard` with the real phone call ran 2026-10-24: browser opened the chart, Oceanus alert at 95, call answered, card switched to "Dispatcher answered". No errors.
 - Full `python demo.py` with the real phone call ran 2026-10-24: 45 s total, Oceanus risk 95, call answered (Twilio in-progress). Ready for the 8:00 backup video. Do one full run before recording the 8:00 backup video.
 - Next: rehearse pitch, record backup video at 8:00, fill in submission rules at the top of this file.
