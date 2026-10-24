@@ -8,7 +8,7 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - Deadline: 8:30 PM
 
 ## Milestones
-- [ ] 3:15 Repo set up, first commit pushed
+- [x] 3:15 Repo set up, first commit pushed
 - [x] 3:45 Replay mode streams recorded CSV
 - [x] 4:15 Live mode works (or skipped: replay only)
 - [ ] 5:15 Per-ship tracking + silence detection
@@ -32,6 +32,6 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - Sessions are replayed one at a time (recordings are days apart; merging them would create fake day-long silences).
 
 ## Known issues / next step
-- No git remote configured yet: commits are local only. Create a GitHub repo and `git remote add origin ...` then push.
+- Repo: https://github.com/nicholaspfeil/dark-ship-detector (origin/main). Push after every commit.
 - Live messages have no recorder yet (can't save live data for later replay). Add only if time allows.
 - Next: milestone 3, per-ship state + silence detection, reading from `feed.get_feed`. Silence must be measured with message timestamps (replay compresses/caps waits).
