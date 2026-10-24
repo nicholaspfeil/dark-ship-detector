@@ -277,8 +277,10 @@ def score_event(e, kb=None):
         elif projection["closest_nm"] < 0.5:
             add(5, f"on its last course it would have passed within half a mile of {RESERVE_NAME}")
 
-    # 5. Ship type
+    # 5. Ship type (and whether it MOVES like a fishing boat, whatever its label says)
     gov = is_government(e["mmsi"], name, ship_type)
+    if not gov and not harbor and ship_type != 30 and fishing_like(e.get("recent", [])):
+        add(15, "was moving like a fishing boat before it went dark: slow, with frequent turns")
     if gov:
         add(-40, "government or military vessel, which often go quiet on duty")
     elif ship_type == 30:
@@ -310,6 +312,22 @@ def score_event(e, kb=None):
             "bearing_from_point_loma": bearing_deg(POINT_LOMA, (lat, lon)),
         },
     }
+
+
+def fishing_like(recent):
+    """
+    Fishing boats trawl or work lines slowly (about 1-5 knots) and keep turning.
+    Transiting boats go faster in a straight line; moored boats sit at 0.
+    True if the last readings look like fishing: median speed 1-5 kn and
+    an average course change of more than 30 degrees between reports.
+    """
+    pts = [(s, c) for s, c in recent if s is not None and c is not None]
+    if len(pts) < 5:
+        return False
+    speeds = sorted(s for s, _ in pts)
+    median = speeds[len(speeds) // 2]
+    turns = [angle_diff(a[1], b[1]) for a, b in zip(pts, pts[1:])]
+    return 1 <= median <= 5 and sum(turns) / len(turns) > 30
 
 
 def review_gap(e):

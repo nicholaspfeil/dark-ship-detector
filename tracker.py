@@ -18,6 +18,7 @@ Two rules keep this honest:
 """
 
 import statistics
+from collections import deque
 
 # A ship is "silent" once it has been quiet for longer than BOTH of these:
 MIN_SILENCE_MIN = 15  # 90% of normal gaps are under 15 min (pre-event data)
@@ -71,6 +72,7 @@ class ShipTracker:
             ship.update(last_seen=t, lat=msg["lat"], lon=msg["lon"],
                         sog=msg["sog"], cog=msg["cog"])
             ship["reports"] += 1
+            ship["recent"].append((msg["sog"], msg["cog"]))  # for movement patterns
             if ship["first_seen"] is None:
                 ship["first_seen"] = t
 
@@ -113,6 +115,7 @@ class ShipTracker:
                 "destination": None, "first_seen": None, "last_seen": None,
                 "lat": None, "lon": None, "sog": None, "cog": None,
                 "reports": 0, "gaps_min": [], "silent": False, "silence_count": 0,
+                "recent": deque(maxlen=10),  # last 10 (speed, course) readings
             }
         return self.ships[mmsi]
 
@@ -133,4 +136,5 @@ class ShipTracker:
             "sog": ship["sog"], "cog": ship["cog"],
             "reports": ship["reports"],
             "silence_count": ship["silence_count"],  # how many times it has gone silent so far
+            "recent": list(ship["recent"]),
         }
