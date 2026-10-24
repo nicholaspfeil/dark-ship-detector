@@ -107,7 +107,8 @@
   .a-status .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); }
   #alert[data-status="calling"] .dot { animation: ring 1.1s ease-out infinite; }
   @keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(239,62,54,.7); } 100% { box-shadow: 0 0 0 14px rgba(239,62,54,0); } }
-  #alert[data-status="phone"] .dot, #alert[data-status="speaker"] .dot { background: #7BD88F; }
+  #alert[data-status="phone"] .dot, #alert[data-status="speaker"] .dot,
+  #alert[data-status="patrol"] .dot, #alert[data-status="dismiss"] .dot { background: #7BD88F; }
   .a-head { display: grid; grid-template-columns: 1fr 104px; gap: 16px; align-items: center; margin-top: 10px; }
   #a-name { font-size: clamp(38px, 5.2vw, 64px); font-weight: 850; font-stretch: 125%; letter-spacing: -.02em;
     line-height: .95; margin: 0; overflow-wrap: anywhere; }
@@ -330,7 +331,8 @@ function hear(item) {
 let lastFeedKey = "", alertShown = false;
 const PHASES = { learning: "Learning normal traffic", alert: "High-risk silence found", done: "Recording reviewed" };
 const STATUS = { calling: "Calling the dispatcher", phone: "Dispatcher answered", speaker: "Spoken on the laptop",
-                 rehearsal: "Rehearsal: no call placed" };
+                 rehearsal: "Rehearsal: no call placed", patrol: "Dispatcher sent a patrol",
+                 dismiss: "Dispatcher dismissed it", "no choice": "Answered, no choice made" };
 
 function render(s) {
   if (s.static && !staticDrawn) drawStatic(s.static);

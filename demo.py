@@ -27,6 +27,7 @@ from backtest import run_session
 from replay import list_sessions
 from dashboard import Dashboard
 from feed import get_feed
+from interactive import interactive_call
 from replay import MAX_WAIT_S, load_session
 from scoring import alert_text, call_text, clean_name, gap_text, knowledge, review_gap, score_event
 from tracker import ShipTracker
@@ -69,6 +70,7 @@ def main():
     parser.add_argument("--no-alert", action="store_true", help="don't call or speak (rehearsal)")
     parser.add_argument("--speed", type=float, default=DEMO_SPEED, help="replay speed during the watch phase")
     parser.add_argument("--dashboard", action="store_true", help="also show the live chart in a browser")
+    parser.add_argument("--two-way", action="store_true", help="keypad call: press 1 to send a patrol, 2 to dismiss")
     parser.add_argument("--port", type=int, default=8765, help="dashboard port")
     parser.add_argument("--no-open", action="store_true", help="don't open a browser tab for the dashboard")
     args = parser.parse_args()
@@ -161,7 +163,7 @@ def main():
                         alert_thread = True
                     else:
                         print(" Calling the dispatcher...\n")
-                        alert_thread = threading.Thread(target=deliver, args=(spoken, not args.speaker, dash))
+                        alert_thread = threading.Thread(target=deliver, args=(spoken, not args.speaker, dash, args.two_way))
                         alert_thread.start()
                     if args.mode == "replay":
                         state["fast"] = True  # skip ahead through the rest of the day
@@ -213,9 +215,20 @@ def main():
             pass
 
 
-def deliver(text, use_phone, dash):
-    """Send the alert (phone, else laptop voice) and show how it was delivered."""
-    how = send_alert(text, use_phone=use_phone)
+def deliver(text, use_phone, dash, two_way=False):
+    """Send the alert (phone, else laptop voice) and show how it was delivered.
+    two_way: keypad call; the dispatcher's choice comes back (patrol / dismiss)."""
+    how = None
+    if two_way and use_phone:
+        try:
+            how = interactive_call(text)
+            print(f"[two-way] dispatcher chose: {how}")
+            if how == "not answered":
+                how = send_alert(text, use_phone=False)  # laptop voice fallback
+        except Exception as e:
+            print(f"[two-way] failed ({type(e).__name__}: {e}); using a normal call")
+    if how is None:
+        how = send_alert(text, use_phone=use_phone)
     if dash:
         dash.set_alert_status(how)
 
