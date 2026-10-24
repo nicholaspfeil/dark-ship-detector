@@ -22,9 +22,7 @@ Run it:
 import argparse
 import asyncio
 import json
-import os
 import queue
-import subprocess
 import threading
 import time
 import zlib
@@ -33,6 +31,7 @@ import pandas as pd
 from websockets.asyncio.client import connect
 
 from messages import make_position, make_static
+from secrets_env import get_secret
 
 URL = "wss://stream.aisstream.io/v0/stream"
 # [[south-west corner], [north-east corner]] as [lat, lon]: the waters off San Diego.
@@ -49,18 +48,7 @@ SILENT_TIMEOUT_S = 120
 
 def get_api_key():
     """Read the AIS key from the environment, or from the saved Windows user variable."""
-    key = os.environ.get("AISSTREAM_API_KEY")
-    if key:
-        return key
-    if os.name == "nt":
-        out = subprocess.run(
-            ["powershell", "-NoProfile", "-Command",
-             '[Environment]::GetEnvironmentVariable("AISSTREAM_API_KEY","User")'],
-            capture_output=True, text=True)
-        key = out.stdout.strip()
-    if not key:
-        raise SystemExit("AISSTREAM_API_KEY is not set.")
-    return key
+    return get_secret("AISSTREAM_API_KEY")
 
 
 def parse_time(time_utc):

@@ -6,10 +6,13 @@ detect.py — run the feed through the ShipTracker, score each silence, and rank
     python detect.py --mode live              # live feed
     python detect.py --min-risk 50            # only print silences scoring 50+
     python detect.py --show-returns           # also print ships coming back
+    python detect.py --alert                  # phone the dispatcher for the first risk-70+ ship
+    python detect.py --alert --speaker        # same, but speak on the laptop instead of calling
 """
 
 import argparse
 
+from alert import send_alert_async
 from feed import add_feed_args, get_feed
 from scoring import alert_text, knowledge, score_event
 from tracker import ShipTracker
@@ -30,11 +33,17 @@ def main():
     parser.add_argument("--min-risk", type=int, default=0, help="only print silences at or above this risk")
     parser.add_argument("--show-returns", action="store_true", help="also print 'returned' events")
     parser.add_argument("--top", type=int, default=5, help="how many to list in the final ranking")
+    parser.add_argument("--alert", action="store_true", help="send a spoken alert for high-risk silences")
+    parser.add_argument("--speaker", action="store_true", help="with --alert: laptop speaker instead of phone")
+    parser.add_argument("--alert-threshold", type=int, default=70, help="minimum risk that triggers an alert")
+    parser.add_argument("--max-alerts", type=int, default=1,
+                        help="most alerts to send per run (default 1, so a demo can't spam your phone)")
     args = parser.parse_args()
 
     knowledge()  # learn coverage edge + ship registry from data/ before streaming
     tracker = ShipTracker()
     scored = []  # (risk, event, result) for every silence
+    alerts_sent = []  # background alert threads
     n_msgs = 0
     try:
         for msg in get_feed(args.mode, args.session, args.speed):
@@ -48,6 +57,11 @@ def main():
                 scored.append((result["risk"], e, result))
                 if result["risk"] >= args.min_risk:
                     print(format_event(e, result))
+                if (args.alert and result["risk"] >= args.alert_threshold
+                        and len(alerts_sent) < args.max_alerts):
+                    text = alert_text(e, result)
+                    print(f"\n>>> ALERT: {text}\n")
+                    alerts_sent.append(send_alert_async(text, use_phone=not args.speaker))
     except KeyboardInterrupt:
         pass
 

@@ -27,6 +27,9 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - `feed.py`: `get_feed(mode)` + `add_feed_args(parser)` give any script `--mode replay|live --session --speed`. Milestone 3 reads from `get_feed`.
 - Silence detection works: `tracker.py` (`ShipTracker.update(msg)` -> events "silent"/"returned", each with a snapshot: last position, speed, course, type, quiet minutes, silence_count). `python detect.py --speed 0` runs a whole recording in 1-5 s. Results: 137 / 48 / 38 / 59 silences across the 4 recordings.
 - Risk scoring works: `scoring.py` `score_event(event)` -> risk 0-100 + reasons list (points, text); `alert_text(event, result)` builds the spoken sentence. `detect.py` prints each scored silence and a top-N ranking (one line per ship) with "why". Top alerts per recording are moving ships offshore (Oceanus 90, unidentified 367375550 80, Maersk Glacier 70); gov vessels and stopped bay boats score 1.
+- Alerts: `alert.py` `send_alert(text)` phones MY_PHONE_NUMBER via Twilio (inline TwiML, Polly.Joanna voice, says alert twice), watches call status up to 45 s, and falls back to the laptop voice (Windows System.Speech) if Twilio isn't configured, errors, or the call is failed/busy/no-answer. `detect.py --alert` sends one alert (default `--max-alerts 1`) for the first silence with risk >= 70 (`--alert-threshold`); `--speaker` skips the phone. Calls run in a background thread so detection keeps going. `python alert.py` = test call; `python alert.py --speaker` = laptop only.
+- `secrets_env.get_secret(name)` reads env vars or saved Windows user vars (live.py uses it too).
+- Tested: TwiML escaping, laptop fallback (spoke the Oceanus alert aloud), speech with apostrophes. NOT tested: the real Twilio call (TWILIO_* and MY_PHONE_NUMBER are not set on this laptop yet).
 
 ## Decisions made
 - Replay default speed 600x: a ~25 h recording plays in ~2.5 min.
@@ -46,4 +49,5 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - Live detection only smoke-tested (connects, no crash); a live silence takes 15+ min to appear.
 - No fishing vessel in the recordings ever scores high (only 2 fishing boats, mostly docked). The demo story leads with illegal fishing, so the demo needs a decision: lead with a real top alert (e.g. Oceanus 90) or add a clearly labeled simulated fishing-boat scenario. Decide in milestone 6.
 - Weights are hand-set from the exploration facts, not fitted (no labeled "real dark ship" data exists). Be upfront about that with judges.
-- Next: milestone 5, Twilio call that speaks alert_text() for the top alert, with laptop-speaker fallback.
+- Twilio secrets not saved yet: set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER, MY_PHONE_NUMBER as Windows user env vars, then `python alert.py` for a test call. Milestone 5 box stays unchecked until a real call rings.
+- Next: milestone 6, one-command demo + README (and decide the demo scenario).
