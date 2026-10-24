@@ -16,9 +16,26 @@ Ships broadcast their position over **AIS** (Automatic Identification System) ev
 4. **Scores each silence 0-100 with reasons** instead of a yes/no verdict.
 5. **Calls the dispatcher's phone** and reads the top alert aloud. Nobody has to watch a screen. If the call fails, the laptop speaks it.
 
-> "Alert. Underwater operations vessel Oceanus went silent 15 minutes ago, 2 miles west of Point Loma, 25 miles inside receiver coverage, moving 12 knots toward the Cabrillo marine reserve. Risk score 90 out of 100."
+> "Alert. Underwater operations vessel Oceanus went silent 15 minutes ago, 2 miles west of Point Loma, 25 miles inside receiver coverage, moving 12 knots toward the Cabrillo marine reserve. If it held course, it passed within half a mile of the reserve about 11 minutes after going silent. Risk score 95 out of 100."
 
-That alert is real: Oceanus went silent in our Oct 19 recording, out of 137 silences that day.
+That alert is real: Oceanus went silent in our Oct 19 recording, out of 137 silences that day. The call then reads the top reasons and repeats the alert.
+
+## Does it cut the noise? (`python backtest.py`)
+
+Across all 4 recordings (13.9 hours of real coverage once feed outages are removed):
+
+| | Per 24 h of coverage |
+|---|---|
+| Raw silences (what a naive alarm would ring for) | ~488 |
+| Calls at risk 70+ (default) | ~17 |
+| Calls at risk 80+ | ~5 |
+| Calls at risk 90+ | ~2 |
+
+77% of silences were inside a harbor and 27% were government or military vessels. That's a small sample, so treat the rates as rough.
+
+## See it on a map (`python make_map.py`)
+
+Writes `map.html`: every silence in a recording (gray = filtered out, red = top ships), the learned coverage edge, the Cabrillo reserve, each top ship's last hour of track, and its projected course after it went silent.
 
 ## Run the demo
 
@@ -48,6 +65,7 @@ Start at 30. Each factor adds or subtracts points and leaves a reason the dispat
 | Inside San Diego or Mission Bay | -30 stopped, -10 moving | Boats switch off at the dock |
 | 10+ nm inside receiver coverage / near its edge | +20 / -25 | Deep inside coverage, signals don't just fade |
 | Inside / within 1 nm of / heading toward the Cabrillo reserve | +35 / +25 / +10 to +20 | The no-take zone we protect |
+| Projected course (same speed and heading during the silence) enters / passes within 0.5 nm of the reserve | +15 / +5 | Dead reckoning: where it probably went after it went dark |
 | Fishing vessel | +20 | Illegal fishing is the core case |
 | Government or military vessel | -40 | Navy and Coast Guard go quiet legitimately |
 | Has gone silent before and come back | -10 each (max -20) | It does this often |
@@ -78,6 +96,9 @@ Start at 30. Each factor adds or subtracts points and leaves a reason the dispat
 | `tracker.py` | Per-ship state, silence detection, outage handling |
 | `scoring.py` | Learned coverage, ship registry, risk score, spoken alert text |
 | `alert.py` | Twilio phone call (inline TwiML `<Say>`), laptop-voice fallback |
+| `backtest.py` | Alert volume across all recordings |
+| `make_map.py` | Writes `map.html` of a recording's silences |
+| `PITCH.md` | 2-minute pitch script and judge Q&A |
 
 ## Limitations / next steps
 

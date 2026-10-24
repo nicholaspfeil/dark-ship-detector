@@ -29,6 +29,12 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - Risk scoring works: `scoring.py` `score_event(event)` -> risk 0-100 + reasons list (points, text); `alert_text(event, result)` builds the spoken sentence. `detect.py` prints each scored silence and a top-N ranking (one line per ship) with "why". Top alerts per recording are moving ships offshore (Oceanus 90, unidentified 367375550 80, Maersk Glacier 70); gov vessels and stopped bay boats score 1.
 - Alerts: `alert.py` `send_alert(text)` phones MY_PHONE_NUMBER via Twilio (inline TwiML, Polly.Joanna voice, says alert twice), watches call status up to 45 s, and falls back to the laptop voice (Windows System.Speech) if Twilio isn't configured, errors, or the call is failed/busy/no-answer. `detect.py --alert` sends one alert (default `--max-alerts 1`) for the first silence with risk >= 70 (`--alert-threshold`); `--speaker` skips the phone. Calls run in a background thread so detection keeps going. `python alert.py` = test call; `python alert.py --speaker` = laptop only.
 - One-command demo: `python demo.py` (~40 s). Replays the Oct 19 recording: fast-forwards to 1:30 PM local (learn normal), plays at 60x with a ticker + each silence's risk, calls the phone when Oceanus hits risk 90 at 2:02 PM, then fast-forwards the rest of the day and prints the top 5 + an example of a silence we did NOT alert on. Flags: `--speaker`, `--no-alert` (rehearsal), `--mode live`, `--speed`. Rehearsed with --no-alert; live mode smoke-tested.
+- Extras (built after milestone 6):
+  - Projected course (dead reckoning) in scoring.py: assumes same speed/heading during the silence; enters reserve +15, passes within 0.5 nm +5. Spoken: "If it held course, it passed within half a mile of the reserve about 11 minutes after going silent." Oceanus now 95.
+  - Phone call reads the alert, then "Main reasons: ..." (top 3), then repeats only the alert (`call_text` + `twiml_for`).
+  - `backtest.py`: 13.9 h real coverage across 4 recordings; ~488 silences/24 h -> ~17 calls at risk 70, ~5 at 80, ~2 at 90. 77% of silences in harbor, 27% government.
+  - `make_map.py` -> map.html (gitignored): silences (gray/red), learned coverage edge, reserve, top-5 tracks + projected courses. Checked in browser.
+  - PITCH.md: 2-minute script, demo choreography, numbers table, judge Q&A.
 - README.md written for judges: problem, what it does, run instructions, scoring table, design choices, limitations.
 - `secrets_env.get_secret(name)` reads env vars or saved Windows user vars (live.py uses it too).
 - Tested: TwiML escaping, laptop fallback (spoke the Oceanus alert aloud), speech with apostrophes. Real Twilio test call (`python alert.py`, test text) placed 2026-10-24, answered, and Nicholas confirmed the spoken text was correct. Real detector alert call (`detect.py --speed 0 --alert`, Oceanus risk 90) placed 2026-10-24 and answered.
@@ -53,5 +59,5 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - Weights are hand-set from the exploration facts, not fitted (no labeled "real dark ship" data exists). Be upfront about that with judges.
 - Twilio secrets are saved as Windows user env vars.
 - `--alert` fires on the FIRST silence with risk >= threshold as it happens (needed for live mode, which never "ends"), not the overall top of the run. In the biggest recording these are the same ship (Oceanus 90).
-- Not yet done: `python demo.py` with a real phone call (only rehearsed with --no-alert). Do one full run before recording the 8:00 backup video.
+- Not yet done: `python demo.py` with a real phone call (only rehearsed with --no-alert; last rehearsal 39 s). The call is now longer (reasons added) and hasn't been heard yet. Do one full run before recording the 8:00 backup video.
 - Next: rehearse pitch, record backup video at 8:00, fill in submission rules at the top of this file.
