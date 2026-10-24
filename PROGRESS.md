@@ -12,7 +12,7 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - [x] 3:45 Replay mode streams recorded CSV
 - [x] 4:15 Live mode works (or skipped: replay only)
 - [x] 5:15 Per-ship tracking + silence detection
-- [ ] 6:15 Risk score with reasons
+- [x] 6:15 Risk score with reasons
 - [ ] 6:45 Phone alert rings with a real alert
 - [ ] 7:15 One-command demo
 - [ ] 7:30 README; FEATURE FREEZE
@@ -26,6 +26,7 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - Live mode works: `live.py` connects to aisstream, converts messages with the same messages.py functions, reconnects with backoff (1 s doubling to 60 s), and reconnects if silent 120 s. Async WebSocket runs in a background thread feeding a queue, so `live()` is a plain generator like `replay()`. Tested: real San Diego traffic arrives within seconds; bad key prints a hint and retries.
 - `feed.py`: `get_feed(mode)` + `add_feed_args(parser)` give any script `--mode replay|live --session --speed`. Milestone 3 reads from `get_feed`.
 - Silence detection works: `tracker.py` (`ShipTracker.update(msg)` -> events "silent"/"returned", each with a snapshot: last position, speed, course, type, quiet minutes, silence_count). `python detect.py --speed 0` runs a whole recording in 1-5 s. Results: 137 / 48 / 38 / 59 silences across the 4 recordings.
+- Risk scoring works: `scoring.py` `score_event(event)` -> risk 0-100 + reasons list (points, text); `alert_text(event, result)` builds the spoken sentence. `detect.py` prints each scored silence and a top-N ranking (one line per ship) with "why". Top alerts per recording are moving ships offshore (Oceanus 90, unidentified 367375550 80, Maersk Glacier 70); gov vessels and stopped bay boats score 1.
 
 ## Decisions made
 - Replay default speed 600x: a ~25 h recording plays in ~2.5 min.
@@ -33,12 +34,16 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - Silence threshold = max(15 min, 4x the ship's own median gap); needs 3+ reports first. 15 min because 90% of normal gaps are under that.
 - Clock = feed timestamps. Feed outage = no ship reports for 5+ min; outage time is subtracted from every ship's silence. Recordings have 14-20 h recorder gaps, so this is essential.
 - Each silence reported once; "returned" clears it. silence_count lets scoring discount ships that go quiet often.
+- Risk = 30 base + points, clamped 1-99. It's a ranking, not a probability: alert says "risk score N out of 100", not "percent". Points: moving >=2 kn +20 / stopped -20; in harbor -30 stopped, -10 moving; offshore coverage: >=10 nm inside edge +20, 3-10 +5, <3 -25; reserve: inside +35, <1 nm +25, heading toward (outside harbor, <5 nm +20, 5-10 nm +10), <3 nm +10; fishing +20; government -40; harbor work boat -10; passenger -10; each prior silence -10 (max -20).
+- Coverage edge is learned: 95th percentile of report distance from Point Loma in each 30-degree compass slice (offshore 22-44 nm). Land-side slices are tiny, so the coverage factor is skipped inside harbors.
+- Ship type registry built from all ships_*.csv (99% of MMSIs covered). Government = MMSI prefix 3669 (US federal), type 35/55, or name match (US GOV, USNS, USCG, NOAA, CUTTER, PB, CG...).
+- "Toward the reserve" not counted inside the harbor: the exit channel passes the reserve, so every departing boat would match.
 - Sessions are replayed one at a time (recordings are days apart; merging them would create fake day-long silences).
 
 ## Known issues / next step
 - Repo: https://github.com/nicholaspfeil/dark-ship-detector (origin/main). Push after every commit.
 - Live messages have no recorder yet (can't save live data for later replay). Add only if time allows.
-- Many silent ships have ship_type=None: static messages are rare. Milestone 4 should prefill types from all ships_*.csv files (mmsi -> type), and treat type 0/None + name "US GOV" as government.
-- Most silences are stopped boats inside the bay: scoring must push these down.
 - Live detection only smoke-tested (connects, no crash); a live silence takes 15+ min to appear.
-- Next: milestone 4, risk score with reasons, applied to "silent" events.
+- No fishing vessel in the recordings ever scores high (only 2 fishing boats, mostly docked). The demo story leads with illegal fishing, so the demo needs a decision: lead with a real top alert (e.g. Oceanus 90) or add a clearly labeled simulated fishing-boat scenario. Decide in milestone 6.
+- Weights are hand-set from the exploration facts, not fitted (no labeled "real dark ship" data exists). Be upfront about that with judges.
+- Next: milestone 5, Twilio call that speaks alert_text() for the top alert, with laptop-speaker fallback.
