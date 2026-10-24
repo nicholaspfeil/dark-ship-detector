@@ -9,3 +9,6 @@
 
 # Python cache files
 __pycache__/
+
+# Generated map
+map.html
