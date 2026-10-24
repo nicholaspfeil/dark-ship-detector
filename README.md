@@ -58,6 +58,10 @@ Caveat: these scenarios match what the rules were designed to catch, so this che
 
 When a silent ship starts transmitting again, it went dark at A and came back at B, so it must have traveled between them, and the straight line A to B is the shortest route it could have taken. The system checks whether that route crosses the reserve, whether the ship stayed near the reserve while dark, and whether the trip would need an impossible speed (a sign of spoofed positions; the check uses real elapsed time, because ships keep moving during feed outages). In the demo recording, **Oceanus reappeared 2.9 miles away and its shortest path while dark ran through the Cabrillo reserve**, so the projected course was right.
 
+## Two-way call (`python demo.py --two-way`)
+
+The dispatcher answers with the keypad: "Press 1 to send a patrol, 2 to dismiss, 3 to hear it again." A laptop has no public web address for Twilio to report the keypress to, so the call runs as a Twilio Studio flow (a call script hosted by Twilio, created through the API by `interactive.py`), and Python asks Twilio which key was pressed. With `--dashboard`, the alert card then shows "Dispatcher sent a patrol". If the call isn't answered, the laptop voice speaks the alert instead; if the two-way call fails for any reason, a normal one-way call is placed. Tested with a real call on Oct 24, 2026 (pressed 1, result "patrol").
+
 ## Shift briefing (`python briefing.py`)
 
 One phone call that sums up a whole recording, like a start-of-shift handoff: how many silences, how many were routine, and the top ships worth checking with their two strongest reasons. `--print` shows the text, and `--speaker` says it on the laptop.

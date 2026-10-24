@@ -52,6 +52,8 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - "Toward the reserve" not counted inside the harbor: the exit channel passes the reserve, so every departing boat would match.
 - Sessions are replayed one at a time (recordings are days apart; merging them would create fake day-long silences).
 
+- Features from the ranked list: #1 dark-gap reconstruction (Oceanus's path while dark crossed the reserve), #2 fishing-behavior factor (never fires on real data), #3 evaluate.py (92% of 80 simulated dark ships caught), #4 two-way keypad call via Twilio Studio flow "Dark Ship Detector alert" (`demo.py --two-way`; real test call: pressed 1 -> patrol).
+
 ## Known issues / next step
 - Repo: https://github.com/nicholaspfeil/dark-ship-detector (origin/main). Push after every commit.
 - Live messages have no recorder yet (can't save live data for later replay). Add only if time allows.
