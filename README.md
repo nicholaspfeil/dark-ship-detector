@@ -42,6 +42,10 @@ The phone call is the interface; the chart is for the room. A tiny built-in web 
 - When the alert fires, the chart flies to the ship and a card shows the risk gauge, the reasons and the exact words the dispatcher hears, plus whether the call was answered.
 - **Sound:** click "Turn on sound" to hear each new silence as a tone, a soft low tick for harmless ones and a brighter chime for risky ones. You can follow the sea without watching it.
 
+## Shift briefing (`python briefing.py`)
+
+One phone call that sums up a whole recording, like a start-of-shift handoff: how many silences, how many were routine, and the top ships worth checking with their two strongest reasons. `--print` shows the text, and `--speaker` says it on the laptop.
+
 ## See it on a map (`python make_map.py`)
 
 Writes `map.html`: every silence in a recording (gray = filtered out, red = top ships), the learned coverage edge, the Cabrillo reserve, each top ship's last hour of track, and its projected course after it went silent.
