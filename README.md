@@ -33,6 +33,15 @@ Across all 4 recordings (13.9 hours of real coverage once feed outages are remov
 
 77% of silences were inside a harbor and 27% were government or military vessels. That's a small sample, so treat the rates as rough.
 
+## The live chart (`python demo.py --dashboard`)
+
+The phone call is the interface; the chart is for the room. A tiny built-in web server (Python's `http.server`, nothing to install) serves `web/dashboard.html`, and the detector rewrites `web/state.json` a few times a second.
+
+- A nautical chart at night: navy sea, ship contacts in chart-paper buff, the reserve in chart magenta (the color real charts use for restricted areas), range rings every 10 nm, and the learned coverage edge.
+- When a ship goes dark it becomes a **ghost**: its last position, a circle showing everywhere it could have reached at its last speed (growing every minute it stays silent), and its projected course.
+- When the alert fires, the chart flies to the ship and a card shows the risk gauge, the reasons and the exact words the dispatcher hears, plus whether the call was answered.
+- **Sound:** click "Turn on sound" to hear each new silence as a tone, a soft low tick for harmless ones and a brighter chime for risky ones. You can follow the sea without watching it.
+
 ## See it on a map (`python make_map.py`)
 
 Writes `map.html`: every silence in a recording (gray = filtered out, red = top ships), the learned coverage edge, the Cabrillo reserve, each top ship's last hour of track, and its projected course after it went silent.
@@ -42,6 +51,7 @@ Writes `map.html`: every silence in a recording (gray = filtered out, red = top 
 ```powershell
 python -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\python demo.py --dashboard  # phone call + live night chart in the browser
 .venv\Scripts\python demo.py              # phone call (laptop voice if Twilio isn't set up)
 .venv\Scripts\python demo.py --speaker    # laptop voice only
 .venv\Scripts\python demo.py --no-alert   # silent rehearsal
@@ -96,6 +106,7 @@ Start at 30. Each factor adds or subtracts points and leaves a reason the dispat
 | `tracker.py` | Per-ship state, silence detection, outage handling |
 | `scoring.py` | Learned coverage, ship registry, risk score, spoken alert text |
 | `alert.py` | Twilio phone call (inline TwiML `<Say>`), laptop-voice fallback |
+| `dashboard.py` + `web/dashboard.html` | Live night-chart dashboard (local server + state file) |
 | `backtest.py` | Alert volume across all recordings |
 | `make_map.py` | Writes `map.html` of a recording's silences |
 | `PITCH.md` | 2-minute pitch script and judge Q&A |

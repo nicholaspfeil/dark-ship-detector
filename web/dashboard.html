@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dark Ship Detector</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230E1A2B'/%3E%3Ccircle cx='8' cy='8' r='4.5' fill='none' stroke='%23EF3E36' stroke-width='1.6' stroke-dasharray='2 1.6'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&display=swap" rel="stylesheet">
@@ -67,6 +68,13 @@
   .counts dt { color: var(--muted); font-size: 12px; line-height: 1.25; }
   .counts dd { margin: 2px 0 0; font-size: 26px; font-weight: 600; font-stretch: 80%; font-variant-numeric: tabular-nums; }
   h3 { font-size: 13px; font-weight: 600; color: var(--muted); margin: 20px 0 8px; }
+  #sound { margin-top: 16px; align-self: flex-start; font: inherit; font-size: 13px; font-weight: 600;
+    color: var(--buff); background: transparent; border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 14px 6px 12px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+  #sound::before { content: ""; width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--muted); }
+  #sound[aria-pressed="true"] { border-color: var(--edge); }
+  #sound[aria-pressed="true"]::before { background: var(--edge); border-color: var(--edge); }
+  #sound:hover { border-color: var(--muted); }
   #feed { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; min-height: 0; }
   #feed li { display: grid; grid-template-columns: 54px 1fr 30px; column-gap: 10px; align-items: baseline;
     padding: 7px 0; border-bottom: 1px solid rgba(44,69,96,.55); }
@@ -174,6 +182,7 @@
     <div><dt>Silent now</dt><dd id="n-silent">0</dd></div>
     <div><dt>Silences so far</dt><dd id="n-sil">0</dd></div>
   </dl>
+  <button id="sound" type="button" aria-pressed="false">Turn on sound</button>
   <h3 id="list-title">Silences, newest first</h3>
   <ol id="feed"><li class="empty">No ship has gone silent yet.</li></ol>
   <div class="legend">
@@ -280,6 +289,35 @@ function row(item, opts = {}) {
   return li;
 }
 
+// Sound: hear the sea without watching it. Each new silence plays a tone:
+// a soft low tick when it's harmless, a brighter two-note chime when it's
+// worth a second thought. The phone call stays the real alarm.
+let audio = null, lastHeard = null;
+$("sound").addEventListener("click", () => {
+  const on = $("sound").getAttribute("aria-pressed") !== "true";
+  if (on && !audio) audio = new AudioContext();
+  if (audio) on ? audio.resume() : audio.suspend();
+  $("sound").setAttribute("aria-pressed", on);
+  $("sound").textContent = on ? "Sound on" : "Turn on sound";
+});
+function tone(freq, start, length, volume) {
+  const osc = audio.createOscillator(), gain = audio.createGain();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, audio.currentTime + start);
+  gain.gain.linearRampToValueAtTime(volume, audio.currentTime + start + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + start + length);
+  osc.connect(gain).connect(audio.destination);
+  osc.start(audio.currentTime + start);
+  osc.stop(audio.currentTime + start + length + 0.05);
+}
+function hear(item) {
+  if (!audio || audio.state !== "running") return;
+  if (item.risk >= 60) { tone(660, 0, .5, .16); tone(880, .16, .7, .14); }
+  else if (item.risk >= 30) { tone(440, 0, .35, .1); tone(587, .12, .45, .08); }
+  else tone(196, 0, .18, .06);
+}
+
 let lastFeedKey = "", alertShown = false;
 const PHASES = { learning: "Learning normal traffic", alert: "High-risk silence found", done: "Recording reviewed" };
 const STATUS = { calling: "Calling the dispatcher", phone: "Dispatcher answered", speaker: "Spoken on the laptop",
@@ -296,6 +334,13 @@ function render(s) {
   $("n-sil").textContent = s.stats.silences;
   drawShips(s.ships);
   drawGhosts(s.ghosts);
+
+  const newest = s.feed[0];
+  if (newest) {
+    const id = newest.mmsi + newest.time;
+    if (lastHeard !== null && id !== lastHeard && !s.top) hear(newest);
+    lastHeard = id;
+  }
 
   const list = s.top || s.feed;
   const key = JSON.stringify(list) + (s.top ? "top" : "");

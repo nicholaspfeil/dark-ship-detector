@@ -35,6 +35,7 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
   - `backtest.py`: 13.9 h real coverage across 4 recordings; ~488 silences/24 h -> ~17 calls at risk 70, ~5 at 80, ~2 at 90. 77% of silences in harbor, 27% government.
   - `make_map.py` -> map.html (gitignored): silences (gray/red), learned coverage edge, reserve, top-5 tracks + projected courses. Checked in browser.
   - PITCH.md: 2-minute script, demo choreography, numbers table, judge Q&A.
+  - Live dashboard: `python demo.py --dashboard` (+ `--no-open`, `--port`). dashboard.py runs Python's http.server on 127.0.0.1:8765 serving web/; demo writes web/state.json (gitignored) up to 4x/s. Night nautical-chart design (Archivo font, navy sea via CSS-tinted Esri dark gray tiles, chart-magenta reserve, 10 nm range rings, learned coverage edge, sweep around Point Loma). Silent ships = ghosts with growing reach circle (last speed x silent minutes) + projected course. Alert card: extra-wide ship name, risk gauge, reasons, spoken text, call status (calling/answered/laptop/rehearsal). Chart freezes at the alert; the rail then shows the day's top 5. "Turn on sound" plays a tone per new silence (low tick harmless, chime risky). Tested in browser (narrow + desktop layouts); CARTO tiles now need an API key, so switched to Esri.
 - README.md written for judges: problem, what it does, run instructions, scoring table, design choices, limitations.
 - `secrets_env.get_secret(name)` reads env vars or saved Windows user vars (live.py uses it too).
 - Tested: TwiML escaping, laptop fallback (spoke the Oceanus alert aloud), speech with apostrophes. Real Twilio test call (`python alert.py`, test text) placed 2026-10-24, answered, and Nicholas confirmed the spoken text was correct. Real detector alert call (`detect.py --speed 0 --alert`, Oceanus risk 90) placed 2026-10-24 and answered.
@@ -59,5 +60,6 @@ Updated by whichever tool is working (Claude Code or Codex) at the end of every 
 - Weights are hand-set from the exploration facts, not fitted (no labeled "real dark ship" data exists). Be upfront about that with judges.
 - Twilio secrets are saved as Windows user env vars.
 - `--alert` fires on the FIRST silence with risk >= threshold as it happens (needed for live mode, which never "ends"), not the overall top of the run. In the biggest recording these are the same ship (Oceanus 90).
+- `demo.py --dashboard` rehearsed with --no-alert only (not yet with the real call; the call code path is unchanged).
 - Full `python demo.py` with the real phone call ran 2026-10-24: 45 s total, Oceanus risk 95, call answered (Twilio in-progress). Ready for the 8:00 backup video. Do one full run before recording the 8:00 backup video.
 - Next: rehearse pitch, record backup video at 8:00, fill in submission rules at the top of this file.

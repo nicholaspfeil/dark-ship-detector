@@ -2,8 +2,10 @@
 
 ## Before you start
 - Phone on the table, volume up, ringer ON.
-- Terminal open in the repo, font large. Command typed but not run: `.venv\Scripts\python demo.py`
-- `map.html` open in a browser tab (run `python make_map.py` first).
+- Terminal open in the repo, font large. Command typed but not run: `.venv\Scripts\python demo.py --dashboard`
+  (it opens the live chart in your browser by itself; put that window on the projector and press F11 for full screen).
+- Click "Turn on sound" on the chart once it opens, so the room hears each silence as a tone.
+- `map.html` open in another tab for the Q&A (run `python make_map.py` first).
 - Plan B if the call fails: the laptop speaks the alert by itself, so keep talking.
 
 ## Script
@@ -14,13 +16,13 @@
 **What it does (15 s)**
 "Dark Ship Detector watches live ship traffic off San Diego, learns what normal looks like, and when a ship goes quiet it scores how suspicious that is, with reasons. Then it does the one thing a dispatcher needs: it calls their phone and tells them. No screen."
 
-**Demo (45 s)** *(run `demo.py`)*
-"This is a real recording from October 19. It's learning normal traffic, now playing at 60x. Watch the silences: Navy tug, risk 1; boat docked in the bay, risk 1. It's ignoring them, correctly."
+**Demo (45 s)** *(run `demo.py --dashboard`)*
+"This is a real recording from October 19, playing at 60x. Each dot is a ship. When one goes quiet it turns into a ghost, and the circle shows everywhere it could be by now. Those soft ticks you hear are silences it's ignoring: Navy tug, risk 1; boat docked in the bay, risk 1. Correctly."
 *(Oceanus hits, phone rings, put it on speaker)*
 "Oceanus: moving 12 knots, 25 miles inside receiver range where signals don't just fade, heading for the reserve. If it held course, it passed within half a mile of the reserve 11 minutes after going dark. Risk 95."
 
-**Why it's smart (25 s)** *(switch to map.html)*
-"Two things it learns from data. First, where receiver coverage really ends, this blue line. Ships fade out naturally past it, so we don't alarm there. Second, each ship's own reporting rhythm. And it knows the difference between the feed going down and a ship going dark."
+**Why it's smart (25 s)** *(point at the chart)*
+"Two things it learns from data. First, where receiver coverage really ends, this dotted blue line. Ships fade out naturally past it, so we don't alarm there. Second, each ship's own reporting rhythm. And it knows the difference between the feed going down and a ship going dark."
 
 **Impact (15 s)**
 "Across our recordings: about 490 silences a day become about 17 calls at our default threshold, or about 2 a day if you only want the most urgent. Same pipeline runs live today with one flag."
