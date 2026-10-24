@@ -1,5 +1,20 @@
 # Pitch: Dark Ship Detector (2 minutes)
 
+## 2-sentence summary (for the submission form)
+Dark Ship Detector watches live ship-tracking (AIS) traffic off San Diego, learns what normal looks like, and scores every ship that goes silent by how suspicious the silence is: moving, deep inside receiver range, heading for the Cabrillo marine reserve, and so on. It turns ~490 silences a day into a handful of alerts and phones a dispatcher with a spoken alert and its reasons, so nobody has to watch a screen.
+
+## 2-minute demo video script
+Lead with the phone; the chart is supporting. Record the screen plus the phone on speaker (or film both).
+
+| Time | Show | Say |
+|---|---|---|
+| 0:00-0:20 | Your face or the title chart | "Boats fishing illegally in marine reserves switch off their tracking transponder. But ships go silent all the time for harmless reasons, so an alarm on every silence gets ignored. We built something a dispatcher never has to look at." |
+| 0:20-0:30 | Run `demo.py --dashboard`, sound on | "This is a real recording off San Diego from October 19, at 60x speed. The dispatcher never sees this screen. It's here so you can see what the system sees." |
+| 0:30-0:55 | Ghosts appear, soft ticks play | "Each dot is a ship. When one goes silent, it becomes a ghost, and the circle shows where it could be by now. These ticks are silences it's ignoring: Navy tugs, boats docked in the bay. Risk 1." |
+| 0:55-1:30 | Phone rings, put it on speaker, let it talk | *(Let the call play: Oceanus, 12 knots, 25 miles inside coverage, toward the Cabrillo reserve, risk 95, main reasons.)* |
+| 1:30-1:50 | Alert card, then the impact panel | "That's the whole interface: one phone call, with the reasons. Across all our recordings, about 490 silences a day became 17 calls." |
+| 1:50-2:00 | Repo link | "It runs live today on the free public feed. Dark Ship Detector." |
+
 ## Before you start
 - Phone on the table, volume up, ringer ON.
 - Terminal open in the repo, font large. Command typed but not run: `.venv\Scripts\python demo.py --dashboard`

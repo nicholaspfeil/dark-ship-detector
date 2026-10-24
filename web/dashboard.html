@@ -67,6 +67,11 @@
   .counts div { margin: 0; }
   .counts dt { color: var(--muted); font-size: 12px; line-height: 1.25; }
   .counts dd { margin: 2px 0 0; font-size: 26px; font-weight: 600; font-stretch: 80%; font-variant-numeric: tabular-nums; }
+  #impact { margin: 16px 0 0; font-size: 17px; line-height: 1.35; }
+  #impact b { font-size: 30px; font-weight: 700; font-stretch: 80%; font-variant-numeric: tabular-nums; }
+  #impact .from { color: var(--muted); }
+  #impact .to { color: #7BD88F; }
+  #impact small { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }
   h3 { font-size: 13px; font-weight: 600; color: var(--muted); margin: 20px 0 8px; }
   #sound { margin-top: 16px; align-self: flex-start; font: inherit; font-size: 13px; font-weight: 600;
     color: var(--buff); background: transparent; border: 1px solid var(--line); border-radius: 999px;
@@ -182,6 +187,7 @@
     <div><dt>Silent now</dt><dd id="n-silent">0</dd></div>
     <div><dt>Silences so far</dt><dd id="n-sil">0</dd></div>
   </dl>
+  <p id="impact" hidden></p>
   <button id="sound" type="button" aria-pressed="false">Turn on sound</button>
   <h3 id="list-title">Silences, newest first</h3>
   <ol id="feed"><li class="empty">No ship has gone silent yet.</li></ol>
@@ -353,6 +359,13 @@ function render(s) {
   }
 
   if (s.alert) showAlert(s.alert);
+  if (s.impact && $("impact").hidden) {
+    const i = s.impact;
+    $("impact").innerHTML = `<span class="from"><b>${i.silences_per_day}</b> silences a day</span><br>` +
+      `became <span class="to"><b>${i.calls_per_day}</b> phone calls</span>` +
+      `<small>Same scoring run over every recording (${i.hours} hours of real coverage).</small>`;
+    $("impact").hidden = false;
+  }
 }
 
 function showAlert(a) {

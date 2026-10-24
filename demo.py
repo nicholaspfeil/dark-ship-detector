@@ -23,6 +23,8 @@ import time
 import pandas as pd
 
 from alert import send_alert
+from backtest import run_session
+from replay import list_sessions
 from dashboard import Dashboard
 from feed import get_feed
 from replay import MAX_WAIT_S, load_session
@@ -185,6 +187,13 @@ def main():
 
     if dash:
         dash.set_top(top_rows)
+        dash.publish(force=True)
+        # Impact: run every recording through the same scorer (takes a few seconds).
+        rows = [run_session(tag, ALERT_THRESHOLD) for tag in list_sessions()]
+        hours = sum(r["covered_h"] for r in rows)
+        dash.impact = {"silences_per_day": round(sum(r["silences"] for r in rows) / hours * 24),
+                       "calls_per_day": round(sum(len(r["alerts"]) for r in rows) / hours * 24),
+                       "hours": round(hours, 1)}
         dash.publish(force=True)
         print("\nThe dashboard stays open. Press Ctrl+C to quit.")
         try:

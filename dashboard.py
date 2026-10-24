@@ -164,6 +164,7 @@ class Dashboard:
                       "silences": self._silence_total},
             "ships": self._ships, "ghosts": self._ghosts, "feed": list(self.feed),
             "alert": self.alert, "top": self.top, "static": self.static,
+            "impact": getattr(self, "impact", None),
         }
         with self._lock:  # write to a temp file, then swap, so the page never reads half a file
             tmp = STATE_FILE + ".tmp"
