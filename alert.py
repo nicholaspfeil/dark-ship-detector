@@ -29,6 +29,8 @@ VOICE = "Polly.Joanna"  # a natural-sounding Amazon voice that Twilio offers
 # Call states that mean "the dispatcher did not hear it" -> use the fallback.
 FAILED_STATES = {"failed", "busy", "no-answer", "canceled"}
 STATUS_WAIT_S = 45  # how long to watch the call before giving up on it
+CALL_ATTEMPTS = 2   # call once more if the first call isn't answered
+RETRY_WAIT_S = 20
 
 
 def twiml_for(text):
@@ -91,13 +93,19 @@ def call_phone(text):
 
 
 def send_alert(text, use_phone=True):
-    """Phone first, laptop speaker if that's off or fails. Blocks until done."""
+    """Phone first; if nobody picks up, wait and call once more (escalation);
+    laptop speaker if that's off or fails. Blocks until done."""
     if use_phone and twilio_ready():
-        try:
-            if call_phone(text):
-                return "phone"
-        except Exception as e:  # bad credentials, no internet, Twilio error...
-            print(f"[alert] phone call failed ({type(e).__name__}: {e})")
+        for attempt in range(CALL_ATTEMPTS):
+            if attempt:
+                print(f"[alert] no answer; calling again in {RETRY_WAIT_S}s")
+                time.sleep(RETRY_WAIT_S)
+            try:
+                if call_phone(text):
+                    return "phone"
+            except Exception as e:  # bad credentials, no internet, Twilio error: retrying won't help
+                print(f"[alert] phone call failed ({type(e).__name__}: {e})")
+                break
     elif use_phone:
         print("[alert] Twilio not configured; using laptop speaker")
     speak_local(text)

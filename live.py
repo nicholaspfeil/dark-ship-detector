@@ -22,6 +22,7 @@ Run it:
 import argparse
 import asyncio
 import json
+import os
 import queue
 import threading
 import time
@@ -146,19 +147,54 @@ def live():
             continue
 
 
+AIS_COLS = ["time_utc", "mmsi", "ship_name", "lat", "lon", "sog", "cog", "heading", "nav_status"]
+SHIP_COLS = ["time_utc", "mmsi", "ship_name", "ship_type", "length_m", "width_m", "draught_m",
+             "destination", "call_sign", "imo"]
+
+
+def open_recording():
+    """Open the two CSV files in the same format as the pre-event recordings,
+    so replay.py can play today's live data back later."""
+    import csv
+    from replay import DATA_DIR
+    tag = time.strftime("%Y%m%d_%H%M%S", time.gmtime())
+    out = {"tag": tag}
+    for kind, cols in (("ais", AIS_COLS), ("ships", SHIP_COLS)):
+        f = open(os.path.join(DATA_DIR, f"{kind}_{tag}.csv"), "w", newline="", encoding="utf-8")
+        out[kind] = (f, csv.writer(f))
+        out[kind][1].writerow(cols)
+    return out
+
+
+def record(writers, msg):
+    f, w = writers["ais" if msg["type"] == "position" else "ships"]
+    cols = AIS_COLS if msg["type"] == "position" else SHIP_COLS
+    row = {**msg, "time_utc": msg["time"].strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]}
+    w.writerow(["" if row.get(c) is None else row.get(c) for c in cols])
+    f.flush()  # so nothing is lost if the program is stopped
+
+
 def main():
     from replay import format_message
 
     parser = argparse.ArgumentParser(description="Stream live AIS data from aisstream.io.")
     parser.add_argument("--limit", type=int, default=None, help="stop after N messages")
+    parser.add_argument("--record", action="store_true",
+                        help="also save to data/ais_<time>.csv + ships_<time>.csv (replayable later)")
     args = parser.parse_args()
 
+    writers = None
+    if args.record:
+        writers = open_recording()
+        print(f"Recording to data/ais_{writers['tag']}.csv")
     print("Streaming live AIS off San Diego  (Ctrl+C to stop)")
     count = 0
     start = time.time()
     try:
         for msg in live():
             print(format_message(msg))
+            if writers:
+                record(writers, msg)
             count += 1
             if args.limit and count >= args.limit:
                 break

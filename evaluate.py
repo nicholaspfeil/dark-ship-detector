@@ -68,6 +68,8 @@ def main():
     for tag in list_sessions():
         real = load_session(tag)
         times = [m["time"] for m in real]
+        if len(times) < 500:
+            continue  # too short to place test ships in (e.g. a brand-new live recording)
         fakes = {}
         for scenario in results:
             placed = 0
