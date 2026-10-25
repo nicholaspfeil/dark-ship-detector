@@ -7,7 +7,7 @@ demo.py — Milestone 6: the whole system in one command.
     python demo.py --mode live      # watch the live feed instead
 
 The replay demo runs in three phases on a real recording (Oct 19, 2026):
-  1. Fast-forward: the first 30 minutes of the recording are fed in instantly
+  1. Fast-forward: the first 40 minutes of the recording are fed in instantly
      so the tracker learns each ship's normal reporting rhythm.
   2. Watch: the next part plays at 60x (1 recorded minute per second) while
      the screen shows a ticker. When a silence scores 70+, we phone the dispatcher.
@@ -33,7 +33,7 @@ from scoring import alert_text, call_text, clean_name, gap_text, knowledge, revi
 from tracker import ShipTracker
 
 DEMO_SESSION = "20261019_195808"       # biggest recording: Oct 19-20, 2026
-DEMO_WATCH_FROM = "2026-10-19 20:30"   # UTC; phase 2 starts here (1:30 PM San Diego time)
+DEMO_WATCH_FROM = "2026-10-19 20:40"   # UTC; phase 2 starts here (1:40 PM San Diego time)
 DEMO_SPEED = 60
 TICKER_EVERY_MIN = 2                   # print a status line every 2 recorded minutes
 ALERT_THRESHOLD = 70
@@ -96,7 +96,7 @@ def main():
     else:
         watch_from = pd.Timestamp(DEMO_WATCH_FROM, tz="UTC")
         print(f"Recording of {local(watch_from)} Oct 19 onward. "
-              f"Fast-forwarding 30 min of history to learn normal traffic...")
+              f"Fast-forwarding 40 min of history to learn normal traffic...")
         stream = paced(load_session(DEMO_SESSION), watch_from, args.speed, state)
 
     tracker = ShipTracker()
